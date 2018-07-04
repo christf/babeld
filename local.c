@@ -102,13 +102,16 @@ local_notify_interface_1(struct local_socket *s,
         inet_ntop(AF_INET, ifp->ipv4, v4, INET_ADDRSTRLEN);
     else
         v4[0] = '\0';
+
     if(up)
         rc = snprintf(buf, 512,
-                      "%s interface %s up true%s%s%s%s\n",
+                      "%s interface %s up true%s%s%s%s%s%s\n",
                       local_kind(kind), ifp->name,
                       ifp->ll ? " ipv6 " : "",
                       ifp->ll ? format_address(*ifp->ll) : "",
-                      v4[0] ? " ipv4 " : "", v4);
+                      v4[0] ? " ipv4 " : "", v4,
+                      ifp->conf->use_prefsrc ?  " pref-src ": "",
+                      ifp->conf->use_prefsrc ? format_address(ifp->conf->prefsrc) : "");
     else
         rc = snprintf(buf, 512, "%s interface %s up false\n",
                       local_kind(kind), ifp->name);
