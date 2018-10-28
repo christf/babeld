@@ -1795,6 +1795,9 @@ send_multihop_request(struct buffered *buf,
     int v4, pb, spb, len;
     int is_ss = !is_default(src_prefix, src_plen);
 
+    if(!if_up(ifp))
+        return;
+
     if(is_ss && buf->rfc6126_compatible)
         return;
 
