@@ -1795,9 +1795,6 @@ send_multihop_request(struct buffered *buf,
     int v4, pb, spb, len;
     int is_ss = !is_default(src_prefix, src_plen);
 
-    if(!if_up(ifp))
-        return;
-
     if(is_ss && buf->rfc6126_compatible)
         return;
 
@@ -1883,7 +1880,8 @@ send_unicast_multihop_request(struct neighbour *neigh,
                               unsigned short hop_count)
 {
     flushupdates(neigh->ifp);
-    send_multihop_request(&neigh->buf, prefix, plen, src_prefix, src_plen,
+    if(if_up(neigh->ifp))
+        send_multihop_request(&neigh->buf, prefix, plen, src_prefix, src_plen,
                           seqno, id, hop_count);
 }
 
