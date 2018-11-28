@@ -38,8 +38,25 @@ struct local_socket {
     int fd;
     char *buf;
     int n;
-    int monitor;
+    uint8_t monitor;
 };
+
+#define MONITOR_NEIGHBOUR 1
+#define MONITOR_INTERFACE 2
+#define MONITOR_ROUTE 3
+#define MONITOR_XROUTE 4
+
+inline void set_flag(uint8_t *d, uint8_t flag) {
+    *d |= 0x01 << flag;
+}
+
+inline void unset_flag(uint8_t *d, uint8_t flag) {
+    *d &= ~( 0x01 << flag );
+}
+
+inline uint8_t get_flag(uint8_t *s, uint8_t flag) {
+    return *s & (0x01 << flag);
+}
 
 extern int local_server_socket;
 extern struct local_socket local_sockets[MAX_LOCAL_SOCKETS];

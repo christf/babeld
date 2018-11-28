@@ -996,15 +996,45 @@ parse_config_line(int c, gnc_t gnc, void *closure,
             goto fail;
         *action_return = CONFIG_ACTION_DUMP;
     } else if(strcmp(token, "monitor") == 0) {
-        c = skip_eol(c, gnc, closure);
-        if(c < -1 || !action_return)
-            goto fail;
-        *action_return = CONFIG_ACTION_MONITOR;
+	*action_return = CONFIG_ACTION_MONITOR;
+	char *token2 = NULL;
+	c = skip_whitespace(c, gnc, closure);
+	c = getword(c, &token2, gnc, closure);
+	if (token2)
+	{
+	    if (strcmp(token2, "route") == 0)
+		*action_return = CONFIG_ACTION_ROUTE_MONITOR;
+	    else if (strcmp(token2, "interface") == 0)
+		*action_return = CONFIG_ACTION_INTERFACE_MONITOR;
+	    else if (strcmp(token2, "xroute") == 0)
+		*action_return = CONFIG_ACTION_XROUTE_MONITOR;
+	    else if (strcmp(token2, "neighbour") == 0)
+		*action_return = CONFIG_ACTION_NEIGHBOUR_MONITOR;
+	    free(token2);
+	    c = skip_eol(c, gnc, closure);
+	}
+	else // monitor was detected but none of the specialties - monitoring everything.
+	    c = -1;
     } else if(strcmp(token, "unmonitor") == 0) {
-        c = skip_eol(c, gnc, closure);
-        if(c < -1 || !action_return)
-            goto fail;
         *action_return = CONFIG_ACTION_UNMONITOR;
+	char *token2 = NULL;
+	c = skip_whitespace(c, gnc, closure);
+	c = getword(c, &token2, gnc, closure);
+	if (token2)
+	{
+	    if (strcmp(token2, "route") == 0)
+		*action_return = CONFIG_ACTION_ROUTE_UNMONITOR;
+	    else if (strcmp(token2, "interface") == 0)
+		*action_return = CONFIG_ACTION_INTERFACE_UNMONITOR;
+	    else if (strcmp(token2, "xroute") == 0)
+		*action_return = CONFIG_ACTION_XROUTE_UNMONITOR;
+	    else if (strcmp(token2, "neighbour") == 0)
+		*action_return = CONFIG_ACTION_NEIGHBOUR_UNMONITOR;
+	    free(token2);
+	    c = skip_eol(c, gnc, closure);
+	}
+	else // ummonitor was detected but none of the specialties - unmonitoring everything.
+	    c = -1;
     } else if(config_finalised && !local_server_write) {
         /* The remaining directives are only allowed in read-write mode. */
         c = skip_to_eol(c, gnc, closure);

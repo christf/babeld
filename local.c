@@ -131,7 +131,7 @@ local_notify_interface(struct interface *ifp, int kind)
 {
     int i;
     for(i = 0; i < num_local_sockets; i++) {
-        if(local_sockets[i].monitor)
+        if(get_flag(&local_sockets[i].monitor, MONITOR_INTERFACE))
             local_notify_interface_1(&local_sockets[i], ifp, kind);
     }
 }
@@ -186,7 +186,7 @@ local_notify_neighbour(struct neighbour *neigh, int kind)
 {
     int i;
     for(i = 0; i < num_local_sockets; i++) {
-        if(local_sockets[i].monitor)
+        if(get_flag(&local_sockets[i].monitor, MONITOR_NEIGHBOUR))
             local_notify_neighbour_1(&local_sockets[i], neigh, kind);
     }
 }
@@ -223,7 +223,7 @@ local_notify_xroute(struct xroute *xroute, int kind)
 {
     int i;
     for(i = 0; i < num_local_sockets; i++) {
-        if(local_sockets[i].monitor)
+        if(get_flag(&local_sockets[i].monitor, MONITOR_XROUTE))
             local_notify_xroute_1(&local_sockets[i], xroute, kind);
     }
 }
@@ -268,26 +268,36 @@ local_notify_route(struct babel_route *route, int kind)
 {
     int i;
     for(i = 0; i < num_local_sockets; i++) {
-        if(local_sockets[i].monitor)
+        if(get_flag(&local_sockets[i].monitor, MONITOR_ROUTE))
             local_notify_route_1(&local_sockets[i], route, kind);
     }
 }
 
-static void
-local_notify_all_1(struct local_socket *s)
-{
-    struct interface *ifp;
-    struct neighbour *neigh;
-    struct xroute_stream *xroutes;
-    struct route_stream *routes;
 
-    FOR_ALL_INTERFACES(ifp) {
-        local_notify_interface_1(s, ifp, LOCAL_ADD);
-    }
+static void
+local_notify_all_neighbour_1(struct local_socket *s)
+{
+    struct neighbour *neigh;
 
     FOR_ALL_NEIGHBOURS(neigh) {
         local_notify_neighbour_1(s, neigh, LOCAL_ADD);
     }
+}
+
+static void
+local_notify_all_interface_1(struct local_socket *s)
+{
+    struct interface *ifp;
+
+    FOR_ALL_INTERFACES(ifp) {
+        local_notify_interface_1(s, ifp, LOCAL_ADD);
+    }
+}
+
+static void
+local_notify_all_xroute_1(struct local_socket *s)
+{
+    struct xroute_stream *xroutes;
 
     xroutes = xroute_stream();
     if(xroutes) {
@@ -299,6 +309,12 @@ local_notify_all_1(struct local_socket *s)
         }
         xroute_stream_done(xroutes);
     }
+}
+
+static void
+local_notify_all_route_1(struct local_socket *s)
+{
+    struct route_stream *routes;
 
     routes = route_stream(ROUTE_ALL);
     if(routes) {
@@ -310,7 +326,16 @@ local_notify_all_1(struct local_socket *s)
         }
         route_stream_done(routes);
     }
-    return;
+}
+
+
+static void
+local_notify_all_1(struct local_socket *s)
+{
+    local_notify_all_interface_1(s);
+    local_notify_all_neighbour_1(s);
+    local_notify_all_xroute_1(s);
+    local_notify_all_route_1(s);
 }
 
 int
@@ -353,12 +378,40 @@ local_read(struct local_socket *s)
         case CONFIG_ACTION_DUMP:
             local_notify_all_1(s);
             break;
+        case CONFIG_ACTION_INTERFACE_MONITOR:
+	    set_flag(&s->monitor, MONITOR_INTERFACE);
+            local_notify_all_interface_1(s);
+            break;
+        case CONFIG_ACTION_INTERFACE_UNMONITOR:
+	    unset_flag(&s->monitor, MONITOR_INTERFACE);
+            break;
+        case CONFIG_ACTION_ROUTE_MONITOR:
+	    set_flag(&s->monitor, MONITOR_ROUTE);
+            local_notify_all_route_1(s);
+            break;
+        case CONFIG_ACTION_ROUTE_UNMONITOR:
+	    unset_flag(&s->monitor, MONITOR_ROUTE);
+            break;
+        case CONFIG_ACTION_XROUTE_MONITOR:
+	    set_flag(&s->monitor, MONITOR_XROUTE);
+            local_notify_all_xroute_1(s);
+            break;
+        case CONFIG_ACTION_XROUTE_UNMONITOR:
+	    unset_flag(&s->monitor, MONITOR_XROUTE);
+            break;
+        case CONFIG_ACTION_NEIGHBOUR_MONITOR:
+	    set_flag(&s->monitor, MONITOR_NEIGHBOUR);
+            local_notify_all_neighbour_1(s);
+            break;
+        case CONFIG_ACTION_NEIGHBOUR_UNMONITOR:
+	    unset_flag(&s->monitor, MONITOR_NEIGHBOUR);
+            break;
         case CONFIG_ACTION_MONITOR:
+            s->monitor = 0xff;
             local_notify_all_1(s);
-            s->monitor = 1;
             break;
         case CONFIG_ACTION_UNMONITOR:
-            s->monitor = 0;
+            s->monitor = 0x00;
             break;
         case CONFIG_ACTION_NO:
             snprintf(reply, sizeof(reply), "no%s%s\n",

@@ -624,6 +624,22 @@ any configuration file directive, including
 and
 .BR unmonitor ;
 .IP \(bu
+.B monitor neighbour
+and
+.BR unmonitor neighbour;
+.IP \(bu
+.B monitor route
+and
+.BR unmonitor route ;
+.IP \(bu
+.B monitor xroute
+and
+.BR unmonitor xroute ;
+.IP \(bu
+.B monitor interface
+and
+.BR unmonitor interface ;
+.IP \(bu
 .BR quit .
 .SH EXAMPLES
 You can participate in a Babel network by simply running
